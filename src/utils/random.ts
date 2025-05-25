@@ -74,11 +74,3 @@ export function getRandomUserId(
 
   return eligibleIds[getRandomInt(0, eligibleIds.length - 1)];
 }
-
-/**
- * Formats a number to display without decimal places if it's a whole number
- * Works correctly with both positive and negative numbers
- */
-export function formatNumber(value: number): string {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(1);
-}

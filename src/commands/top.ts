@@ -70,16 +70,8 @@ export async function handleTop(
       // Get actual size from database
       const actualSize = user.size;
 
-      // Format size without decimal if it's a whole number (but keep it minimum 1cm for display)
-      const sizeDisplay = Number.isInteger(Math.max(1, actualSize))
-        ? Math.max(1, actualSize).toString()
-        : Math.max(1, actualSize).toFixed(1);
-
-      // For users with negative sizes, show the actual value in parentheses
-      const displayText =
-        actualSize < 1
-          ? `${sizeDisplay}cm (actual: ${formatNumber(actualSize)}cm)`
-          : `${sizeDisplay}cm`;
+      // Show actual size in parentheses
+      const displayText = `${formatNumber(actualSize)}cm`;
 
       return `${prefix} <b>${user.firstName}</b>: ${displayText}`;
     });

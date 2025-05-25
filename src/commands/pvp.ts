@@ -3,8 +3,9 @@ import { MIN_FIGHT_SIZE } from "../utils/config/manager";
 import {
   createGroupFight,
   getOrCreateGroupUser,
+  getActiveUserFights,
 } from "../utils/db/group-operations";
-import { formatNumber } from "../utils/random";
+import { formatNumber } from "../utils/formatting-utils";
 
 /**
  * Handles the /pvp command
@@ -68,7 +69,26 @@ export async function handlePvp(
     return;
   }
 
-  // No need to check if wager is less than initiator's size since the max wager equals their size
+  // Get active fights for this user
+  const activeUserFights = await getActiveUserFights(initiator.id, groupId);
+  const totalActiveWagers = activeUserFights.reduce(
+    (sum, fight) => sum + fight.wager,
+    0
+  );
+
+  // Check if total wagers would exceed user's size
+  if (totalActiveWagers + wager > initiator.size) {
+    await bot.sendMessage(
+      msg.chat.id,
+      `You can't start this fight! Your total active wagers (${formatNumber(
+        totalActiveWagers
+      )}cm) plus this wager (${formatNumber(
+        wager
+      )}cm) would exceed your size (${formatNumber(initiator.size)}cm).`,
+      { reply_to_message_id: msg.message_id }
+    );
+    return;
+  }
 
   // Create a new group fight but don't set the target yet (will be set when someone accepts)
   const fight = await createGroupFight(

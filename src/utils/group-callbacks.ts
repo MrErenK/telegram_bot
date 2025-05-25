@@ -1,7 +1,12 @@
 import TelegramBot from "node-telegram-bot-api";
-import { findGroupUserById, completeGroupFight } from "./db/group-operations";
+import {
+  findGroupUserById,
+  completeGroupFight,
+  getActiveUserFights,
+} from "./db/group-operations";
 import { MIN_FIGHT_SIZE } from "./config/manager";
 import { getGroupFightRepository } from "./db";
+import { formatNumber } from "./formatting-utils";
 
 /**
  * Handles the callback queries for group fight acceptance
@@ -18,7 +23,7 @@ export async function handleGroupFightAcceptance(
     const fightRepo = getGroupFightRepository();
     const fight = await fightRepo.findOne({
       where: { id: parseInt(fightId) },
-      relations: { initiator: true, target: true }
+      relations: { initiator: true, target: true },
     });
 
     if (!fight) {
@@ -65,12 +70,36 @@ export async function handleGroupFightAcceptance(
       return;
     }
 
-    // Check if wager is too high for the user
-    // Maximum wager is now the user's size (can bet their entire size)
-    const maxAllowedWager = acceptingUser.size;
-    if (fight.wager > maxAllowedWager) {
+    // Get active fights for this user
+    const activeUserFights = await getActiveUserFights(
+      acceptingUser.id,
+      groupId
+    );
+    const totalActiveWagers = activeUserFights.reduce(
+      (sum, fight) => sum + fight.wager,
+      0
+    );
+
+    // Check if total wagers would exceed user's size
+    if (totalActiveWagers + fight.wager > acceptingUser.size) {
       await bot.answerCallbackQuery(callbackQuery.id, {
-        text: `The wager of ${fight.wager}cm is too high for your ${acceptingUser.size}cm dick! Your max wager is ${maxAllowedWager}cm.`,
+        text: `You can't accept this fight! Your total active wagers (${formatNumber(
+          totalActiveWagers
+        )}cm) plus this wager (${formatNumber(
+          fight.wager
+        )}cm) would exceed your size (${formatNumber(acceptingUser.size)}cm).`,
+        show_alert: true,
+      });
+      return;
+    }
+
+    // Check if wager is too high for the user
+    if (fight.wager > acceptingUser.size) {
+      await bot.answerCallbackQuery(callbackQuery.id, {
+        text: `The wager of ${formatNumber(
+          fight.wager
+        )}cm is too high for your ${formatNumber(acceptingUser.size)}cm dick!`,
+        show_alert: true,
       });
       return;
     }

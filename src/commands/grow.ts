@@ -1,5 +1,5 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import { getGrowthAmount, getGrowthEmoji, formatNumber } from "../utils/random";
+import { getGrowthAmount, getGrowthEmoji } from "../utils/random";
 import {
   updateGroupUser,
   createGroupGrowth,
@@ -8,7 +8,7 @@ import {
   findGroupUserById,
   getOrCreateGroupUser,
 } from "../utils/db/group-operations";
-import { formatTimeLeft } from "../utils/formatting-utils";
+import { formatTimeLeft, formatNumber } from "../utils/formatting-utils";
 import { ErrorType, handleError } from "../utils/error";
 import logger from "../utils/logger";
 

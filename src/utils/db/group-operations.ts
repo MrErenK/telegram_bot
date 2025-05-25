@@ -328,6 +328,33 @@ export async function findGroupUserByIdentifier(
 }
 
 /**
+ * Gets all active fights for a user in a group
+ */
+export async function getActiveUserFights(
+  userId: number,
+  groupId: number
+): Promise<GroupFight[]> {
+  const fightRepo = getDatabase().getRepository(GroupFight);
+  
+  // Get all fights where user is initiator or target and fight is not completed
+  return await fightRepo.find({
+    where: [
+      {
+        initiator: { id: userId },
+        groupId: groupId,
+        status: "pending"
+      },
+      {
+        target: { id: userId },
+        groupId: groupId,
+        status: "pending"
+      }
+    ],
+    relations: ["initiator", "target"]
+  });
+}
+
+/**
  * Completes a group fight
  */
 export async function completeGroupFight(
@@ -403,7 +430,8 @@ export async function completeGroupFight(
       winner.wins += 1;
 
       // Update loser's stats
-      loser.size = Math.max(1, loser.size - fight.wager); // Don't go below 1cm
+      loser.size -= fight.wager; // Remove the wager amount
+      if (loser.size < 0) loser.size = 0; // Ensure size doesn't go below 0
       loser.losses += 1;
 
       // Save all changes
