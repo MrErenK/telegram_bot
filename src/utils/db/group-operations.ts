@@ -18,19 +18,21 @@ export async function getOrCreateGroupUser(
     last_name?: string | undefined;
     username?: string | undefined;
   },
-  groupId: number,
+  groupId: number
 ): Promise<GroupUser> {
   // Validate input parameters
   if (!userData || !userData.id || !userData.first_name) {
     logger.error(
-      `Invalid user data provided to getOrCreateGroupUser: ${JSON.stringify(userData)}`,
+      `Invalid user data provided to getOrCreateGroupUser: ${JSON.stringify(
+        userData
+      )}`
     );
     throw new Error("Invalid user data: User ID and first name are required");
   }
 
   if (!groupId) {
     logger.error(
-      `Invalid group ID provided to getOrCreateGroupUser: ${groupId}`,
+      `Invalid group ID provided to getOrCreateGroupUser: ${groupId}`
     );
     throw new Error("Invalid group ID: Group ID is required");
   }
@@ -63,7 +65,7 @@ export async function getOrCreateGroupUser(
 
       if (!user) {
         logger.info(
-          `Creating new user: ${userData.first_name} (${userData.id})`,
+          `Creating new user: ${userData.first_name} (${userData.id})`
         );
         user = transactionManager.getRepository(User).create({
           id: userData.id,
@@ -79,7 +81,7 @@ export async function getOrCreateGroupUser(
       // If group user doesn't exist, create a new one
       if (!groupUser) {
         logger.info(
-          `Creating new group user: ${userData.first_name} (${userData.id}) in group ${groupId}`,
+          `Creating new group user: ${userData.first_name} (${userData.id}) in group ${groupId}`
         );
 
         groupUser = transactionManager.getRepository(GroupUser).create({
@@ -100,7 +102,7 @@ export async function getOrCreateGroupUser(
 
         await transactionManager.getRepository(GroupUser).save(groupUser);
         logger.info(
-          `Successfully created user: ${userData.id} in group ${groupId}`,
+          `Successfully created user: ${userData.id} in group ${groupId}`
         );
       } else {
         // Update user information if it has changed
@@ -124,7 +126,7 @@ export async function getOrCreateGroupUser(
         if (isChanged) {
           await transactionManager.getRepository(GroupUser).save(groupUser);
           logger.debug(
-            `Updated user information for: ${userData.id} in group ${groupId}`,
+            `Updated user information for: ${userData.id} in group ${groupId}`
           );
         }
       }
@@ -133,7 +135,7 @@ export async function getOrCreateGroupUser(
     } catch (error) {
       logger.error(
         `Error in getOrCreateGroupUser for user ${userData.id} in group ${groupId}:`,
-        error as Error,
+        error as Error
       );
       throw error; // Rethrow to handle at the calling level
     }
@@ -144,7 +146,7 @@ export async function getOrCreateGroupUser(
  * Updates a group user's information
  */
 export async function updateGroupUser(
-  groupUser: GroupUser,
+  groupUser: GroupUser
 ): Promise<GroupUser> {
   const db = getDatabase();
   const groupUserRepo = db.getRepository(GroupUser);
@@ -182,7 +184,7 @@ export async function createGroupFight(
   initiator: GroupUser,
   targetId: number | null,
   groupId: number,
-  wager: number = 1.0,
+  wager: number = 1.0
 ): Promise<GroupFight> {
   return await getDatabase().transaction(async (manager) => {
     const fightRepo = manager.getRepository(GroupFight);
@@ -216,7 +218,7 @@ export async function createGroupFight(
 export async function findTopGroupUsers(
   groupId: number,
   limit: number = 10,
-  offset: number = 0,
+  offset: number = 0
 ): Promise<GroupUser[]> {
   const db = getDatabase();
   const groupUserRepo = db.getRepository(GroupUser);
@@ -253,7 +255,7 @@ export async function countGroupUsers(groupId: number): Promise<number> {
 export async function getGroupUserGrowthHistory(
   userId: number,
   groupId: number,
-  limit: number = 5,
+  limit: number = 5
 ): Promise<GroupGrowth[]> {
   const db = getDatabase();
   const groupUserRepo = db.getRepository(GroupUser);
@@ -285,7 +287,7 @@ export async function getGroupUserGrowthHistory(
   } catch (error) {
     logger.error(
       `Error getting growth history for user ${userId} in group ${groupId}:`,
-      error as Error,
+      error as Error
     );
     return [];
   }
@@ -301,7 +303,7 @@ export async function getGroupUserGrowthHistory(
  */
 export async function findGroupUserByIdentifier(
   identifier: string,
-  groupId: number,
+  groupId: number
 ): Promise<GroupUser | null> {
   const db = getDatabase();
   const groupUserRepo = db.getRepository(GroupUser);
@@ -331,7 +333,7 @@ export async function findGroupUserByIdentifier(
 export async function completeGroupFight(
   fightId: number,
   initiatorRoll: number,
-  targetRoll: number,
+  targetRoll: number
 ): Promise<{
   fight: GroupFight;
   oldWinnerRank?: number;
@@ -431,7 +433,7 @@ export async function completeGroupFight(
  */
 export async function canUserGrow(
   userId: number,
-  groupId: number,
+  groupId: number
 ): Promise<{
   canGrow: boolean;
   timeUntilNextGrowth: number;
@@ -519,7 +521,7 @@ export async function getGroupStats(groupId: number): Promise<{
  */
 export async function getUserRank(
   userId: number,
-  groupId: number,
+  groupId: number
 ): Promise<number | null> {
   const db = getDatabase();
   try {
@@ -533,7 +535,7 @@ export async function getUserRank(
       ) ranked
       WHERE userId = ?
       `,
-      [groupId, userId],
+      [groupId, userId]
     );
 
     if (userRank && userRank.length > 0) {
@@ -544,7 +546,7 @@ export async function getUserRank(
   } catch (error) {
     logger.error(
       `Error getting user rank for user ${userId} in group ${groupId}:`,
-      error as Error,
+      error as Error
     );
     return null;
   }
@@ -554,7 +556,7 @@ export async function getUserRank(
  * Gets a random user from the group
  */
 export async function getRandomGroupUser(
-  groupId: number,
+  groupId: number
 ): Promise<GroupUser | null> {
   const db = getDatabase();
   const groupUserRepo = db.getRepository(GroupUser);
@@ -573,7 +575,7 @@ export async function getRandomGroupUser(
   } catch (error) {
     logger.error(
       `Error getting random group user for group ${groupId}:`,
-      error as Error,
+      error as Error
     );
     return null;
   }
@@ -635,14 +637,14 @@ export async function createGroupUser({
     // Save the new user to the database
     await groupUserRepo.save(newUser);
     logger.info(
-      `Created user ${id} with manual attributes in group ${groupId}`,
+      `Created user ${id} with manual attributes in group ${groupId}`
     );
 
     return newUser;
   } catch (error) {
     logger.error(
       `Error creating user ${id} in group ${groupId}:`,
-      error as Error,
+      error as Error
     );
     throw error;
   }
@@ -691,7 +693,7 @@ export async function findUserById(userId: number): Promise<GroupUser | null> {
  */
 export async function findGroupUserById(
   userId: number,
-  groupId: number,
+  groupId: number
 ): Promise<GroupUser | null> {
   const db = getDatabase();
   const groupUserRepo = db.getRepository(GroupUser);
@@ -707,8 +709,54 @@ export async function findGroupUserById(
   } catch (error) {
     logger.error(
       `Error finding user ${userId} in group ${groupId}:`,
-      error as Error,
+      error as Error
     );
     return null;
   }
+}
+
+/**
+ * Checks if a group is eligible for a new Dick of the Day
+ * There's a 24-hour cooldown between DOTD awards for the entire group
+ *
+ * @param groupId Telegram group ID
+ * @returns Object containing whether the group can have a DOTD and time until next eligibility
+ */
+export async function canGroupReceiveDOTD(groupId: number): Promise<{
+  canReceive: boolean;
+  timeUntilNextEligible: number;
+}> {
+  const db = getDatabase();
+  const growthRepo = db.getRepository(GroupGrowth);
+
+  // Find the most recent DOTD growth for this group
+  const lastDOTD = await growthRepo
+    .createQueryBuilder("growth")
+    .innerJoin("growth.groupUser", "groupUser")
+    .where("groupUser.groupId = :groupId", { groupId })
+    .andWhere("growth.isSpecial = :isSpecial", { isSpecial: true })
+    .andWhere("growth.specialReason = :specialReason", {
+      specialReason: "Dick of the Day",
+    })
+    .orderBy("growth.timestamp", "DESC")
+    .getOne();
+
+  if (!lastDOTD) {
+    // If no previous DOTD for this group, they can receive it
+    return {
+      canReceive: true,
+      timeUntilNextEligible: 0,
+    };
+  }
+
+  // Calculate time since last DOTD
+  const now = new Date();
+  const timeSinceLastDOTD = now.getTime() - lastDOTD.timestamp.getTime();
+  const cooldownPeriod = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  const timeUntilNextEligible = Math.max(0, cooldownPeriod - timeSinceLastDOTD);
+
+  return {
+    canReceive: timeUntilNextEligible <= 0,
+    timeUntilNextEligible,
+  };
 }

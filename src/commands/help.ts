@@ -18,7 +18,6 @@ export async function handleHelp(
 /grow or /g - Grow your dick (can be used once per day)
 /stats or /s - View your dick stats and growth history
 /top or /t - See the leaderboard of biggest dicks
-/pvp or /fight or /f [wager] - Challenge others to a dick fight
 /dickoftheday or /dotd - Pick a random user for a special bonus growth
 /help or /h - Show this help message
 
@@ -28,15 +27,6 @@ export async function handleHelp(
 3. Win fights to take cm from your opponents
 4. Try to reach the top of the leaderboard!
 5. Use /dickoftheday to give someone a lucky bonus!
-
-<b>Game Rules:</b>
-- Your dick starts at 0cm
-- Your dick will never shrink below 1cm
-- You need at least 5cm to participate in fights
-- Fight wagers can be between 0.5cm and 5.0cm
-- In a fight, the winner takes the wagered amount from the loser
-- When you grow, there's a 60% chance of shrinking
-- Dick of the Day gives a random user 1-15cm bonus growth
 `;
 
   // Add admin commands if the user is the bot owner

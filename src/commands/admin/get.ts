@@ -2,8 +2,8 @@ import * as TelegramBot from "node-telegram-bot-api";
 import { AppDataSource } from "../../utils/db";
 import { GroupUser, GroupGrowth, GroupFight } from "../../entity";
 import * as fs from "fs";
-import * as path from "path";
 import { DB_PATH } from "../../utils/config/manager";
+import { formatNumber } from "../../utils/formatting-utils";
 
 /**
  * Admin command to get detailed database information
@@ -440,9 +440,18 @@ async function getTopGrowers(
   let message = `<b>TOP ${count} GROWERS IN THIS GROUP</b>\n\n`;
 
   topGrowers.forEach((user, index) => {
+    // Show actual size without minimum constraint
+    const actualSize = user.size;
+    const displaySize =
+      actualSize < 1
+        ? `${formatNumber(Math.max(1, actualSize))}cm (actual: ${formatNumber(
+            actualSize
+          )}cm)`
+        : `${formatNumber(actualSize)}cm`;
+
     message += `${index + 1}. ${user.firstName} - ${
       user.totalGrowths
-    } growths (${user.size.toFixed(1)}cm)\n`;
+    } growths (${displaySize})\n`;
   });
 
   await bot.sendMessage(msg.chat.id, message, { parse_mode: "HTML" });

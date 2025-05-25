@@ -19,7 +19,7 @@ export function getRandomInt(min: number, max: number): number {
 /**
  * Returns a random growth value for the dick
  * Has a chance to return negative value based on GROW_SHRINK_RATIO
- * Always returns a whole number (1-15 cm)
+ * Always returns a whole number (-15 to 15 cm)
  *
  * @param totalGrowths Optional number of previous growths for the user
  */
@@ -77,6 +77,7 @@ export function getRandomUserId(
 
 /**
  * Formats a number to display without decimal places if it's a whole number
+ * Works correctly with both positive and negative numbers
  */
 export function formatNumber(value: number): string {
   return Number.isInteger(value) ? value.toString() : value.toFixed(1);

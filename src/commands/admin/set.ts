@@ -12,14 +12,14 @@ import { findGroupUserByIdentifier } from "../../utils/db/group-operations";
 export async function setCommand(
   bot: TelegramBot,
   msg: TelegramBot.Message,
-  args?: string,
+  args?: string
 ): Promise<void> {
   // Check if this is a group chat
   if (msg.chat.type === "private") {
     await bot.sendMessage(
       msg.chat.id,
       "This command can only be used in group chats.",
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
     return;
   }
@@ -35,7 +35,7 @@ export async function setCommand(
         "Examples:\n" +
         "/admin_set @username size 20\n" +
         "/admin_set 123456789 size 15.5",
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
     return;
   }
@@ -46,7 +46,7 @@ export async function setCommand(
     await bot.sendMessage(
       msg.chat.id,
       "Invalid arguments. Usage: /admin_set <username or ID> <attribute> <value>",
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
     return;
   }
@@ -62,9 +62,9 @@ export async function setCommand(
     await bot.sendMessage(
       msg.chat.id,
       `Invalid attribute: ${attribute}. Valid attributes are: ${validAttributes.join(
-        ", ",
+        ", "
       )}`,
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
     return;
   }
@@ -80,8 +80,8 @@ export async function setCommand(
     }
 
     // Additional validation based on attribute type
-    if (attribute === "size" && parsedValue < 1) {
-      throw new Error(`Size cannot be less than 1cm.`);
+    if (attribute === "size" && !isFinite(parsedValue)) {
+      throw new Error(`Size must be a valid number.`);
     }
 
     if (
@@ -91,14 +91,14 @@ export async function setCommand(
       throw new Error(
         `${
           attribute.charAt(0).toUpperCase() + attribute.slice(1)
-        } must be a non-negative integer.`,
+        } must be a non-negative integer.`
       );
     }
   } catch (error) {
     await bot.sendMessage(
       msg.chat.id,
       error instanceof Error ? error.message : "Invalid value",
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
     return;
   }
@@ -112,7 +112,7 @@ export async function setCommand(
       `User not found in this group: ${userIdentifier}`,
       {
         reply_to_message_id: msg.message_id,
-      },
+      }
     );
     return;
   }
@@ -146,7 +146,7 @@ export async function setCommand(
       `✅ Successfully updated ${groupUser.firstName}'s ${attribute}:\n` +
         `Old value: ${oldValueDisplay}\n` +
         `New value: ${newValueDisplay}`,
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
   } catch (error) {
     await bot.sendMessage(
@@ -154,7 +154,7 @@ export async function setCommand(
       `Error updating user: ${
         error instanceof Error ? error.message : "Unknown error"
       }`,
-      { reply_to_message_id: msg.message_id },
+      { reply_to_message_id: msg.message_id }
     );
   }
 }

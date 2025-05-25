@@ -18,7 +18,7 @@ import logger from "../utils/logger";
  */
 export async function handleGrow(
   bot: TelegramBot,
-  msg: TelegramBot.Message,
+  msg: TelegramBot.Message
 ): Promise<void> {
   try {
     // Check if this is a private chat
@@ -26,7 +26,7 @@ export async function handleGrow(
       await bot.sendMessage(
         msg.chat.id,
         "This bot now works in group chats only. Add me to a group and use the commands there!",
-        { reply_to_message_id: msg.message_id },
+        { reply_to_message_id: msg.message_id }
       );
       return;
     }
@@ -45,7 +45,7 @@ export async function handleGrow(
     } catch (dbError) {
       logger.error(
         `Failed to find group user: ${userId} in group ${groupId}`,
-        dbError as Error,
+        dbError as Error
       );
       throw dbError;
     }
@@ -54,7 +54,7 @@ export async function handleGrow(
       try {
         // Create new group user if not found
         logger.info(
-          `Creating new user for ${msg.from.first_name} (${userId}) in group ${groupId}`,
+          `Creating new user for ${msg.from.first_name} (${userId}) in group ${groupId}`
         );
 
         // Validate user data before passing to getOrCreateGroupUser
@@ -69,7 +69,7 @@ export async function handleGrow(
             first_name: msg.from.first_name,
             last_name: msg.from.last_name,
           },
-          groupId,
+          groupId
         );
 
         if (!groupUser) {
@@ -80,19 +80,19 @@ export async function handleGrow(
         await bot.sendMessage(
           groupId,
           `Welcome to YarakUzatmaBot, ${msg.from.first_name}! 🍆\nYou can now use /grow to make it grow (or shrink)!`,
-          { reply_to_message_id: msg.message_id },
+          { reply_to_message_id: msg.message_id }
         );
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         logger.error(
           `Failed to create user for ${userId} in group ${groupId}: ${errorMessage}`,
-          error as Error,
+          error as Error
         );
         await bot.sendMessage(
           groupId,
           "Failed to create user profile. Please try again or use /start first.",
-          { reply_to_message_id: msg.message_id },
+          { reply_to_message_id: msg.message_id }
         );
         return;
       }
@@ -105,9 +105,9 @@ export async function handleGrow(
       await bot.sendMessage(
         groupId,
         `You need to wait ${formatTimeLeft(
-          timeUntilNextGrowth,
+          timeUntilNextGrowth
         )} before growing again.`,
-        { reply_to_message_id: msg.message_id },
+        { reply_to_message_id: msg.message_id }
       );
       return;
     }
@@ -121,11 +121,8 @@ export async function handleGrow(
     // Generate growth amount
     const growthAmount = getGrowthAmount(groupUser.totalGrowths);
 
-    // Update user's size
+    // Update user's size - allow negative numbers in the database
     groupUser.size += growthAmount;
-    if (groupUser.size < 1) {
-      groupUser.size = 1; // Minimum size is 1cm
-    }
 
     // Update growth statistics
     groupUser.totalGrowths += 1;
@@ -168,6 +165,9 @@ export async function handleGrow(
     // Get growth emoji based on amount
     const emoji = getGrowthEmoji(growthAmount);
 
+    // Display the actual size without clamping to a minimum value
+    const displaySize = groupUser.size;
+
     // Send growth message
     await bot.sendMessage(
       groupId,
@@ -175,15 +175,15 @@ export async function handleGrow(
         growthAmount > 0
           ? "grew"
           : growthAmount < 0
-            ? "shrunk"
-            : "didn't change"
+          ? "shrunk"
+          : "didn't change"
       } by <b>${growthAmount > 0 ? "+" : ""}${formatNumber(
-        growthAmount,
+        growthAmount
       )}cm</b>!\n\n` +
         `Size: ${formatNumber(oldSize)}cm → ${formatNumber(
-          groupUser.size,
+          displaySize
         )}cm${rankMessage}`,
-      { parse_mode: "HTML", reply_to_message_id: msg.message_id },
+      { parse_mode: "HTML", reply_to_message_id: msg.message_id }
     );
   } catch (error) {
     const errorMessage =

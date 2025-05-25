@@ -10,6 +10,7 @@ import {
 import { sendSafeHTML } from "../utils/formatting";
 import { ErrorType, handleError } from "../utils/error";
 import logger from "../utils/logger";
+import { formatNumber } from "../utils/formatting-utils";
 
 /**
  * Handles the /stats command
@@ -72,15 +73,18 @@ export async function handleStats(
     const nextGrowthTime =
       cooldown > 0 ? `in ${formatCooldownTime(cooldown)}` : "now";
 
-    // Format size without decimal if it's a whole number
-    const displaySize = Number.isInteger(groupUser.size)
-      ? groupUser.size.toString()
-      : groupUser.size.toFixed(1);
+    // Get actual size for database
+    const actualSize = groupUser.size;
+
+    // Format displayable size (minimum 1cm for display only)
+    const displaySize = formatNumber(Math.max(1, actualSize));
 
     // Build message parts
     const messageTemplates = [
       `<b>🍆 ${groupUser.firstName}'s Dick Stats in this Group 🍆</b>\n\n` +
-        `Current size: <b>${displaySize}cm</b>\n` +
+        `Current size: <b>${displaySize}cm</b>` +
+        (actualSize < 1 ? ` (actual: ${formatNumber(actualSize)}cm)` : ``) +
+        `\n` +
         `Total growth attempts: <b>${groupUser.totalGrowths}</b>\n` +
         `Growth rate: <b>${growthPercentage}%</b> (${groupUser.positiveGrowths} times)\n` +
         `Shrink rate: <b>${shrinkPercentage}%</b> (${groupUser.negativeGrowths} times)`,

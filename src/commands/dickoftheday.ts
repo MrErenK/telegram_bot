@@ -6,6 +6,7 @@ import {
   createGroupGrowth,
   getUserRank,
   getRandomGroupUser,
+  canGroupReceiveDOTD,
 } from "../utils/db/group-operations";
 import { sendSafeHTML } from "../utils/formatting";
 import { ErrorType, handleError } from "../utils/error";
@@ -30,6 +31,31 @@ export async function handleDickOfTheDay(
     }
 
     const groupId = msg.chat.id;
+
+    // Check if the group is eligible for Dick of the Day (24-hour cooldown)
+    const { canReceive, timeUntilNextEligible } = await canGroupReceiveDOTD(
+      groupId
+    );
+
+    if (!canReceive) {
+      // Calculate remaining time in hours and minutes
+      const hoursRemaining = Math.floor(
+        timeUntilNextEligible / (60 * 60 * 1000)
+      );
+      const minutesRemaining = Math.floor(
+        (timeUntilNextEligible % (60 * 60 * 1000)) / (60 * 1000)
+      );
+
+      await sendSafeHTML(
+        bot,
+        groupId,
+        `⏳ <b>Dick of the Day is on cooldown</b>\n\n` +
+          `You can use this command again in <b>${hoursRemaining}h ${minutesRemaining}m</b>.\n` +
+          `Each group can only have one Dick of the Day every 24 hours.`,
+        { reply_to_message_id: msg.message_id }
+      );
+      return;
+    }
 
     // Get a random user from the group
     let randomUser = await getRandomGroupUser(groupId);
@@ -104,7 +130,7 @@ export async function handleDickOfTheDay(
       bot,
       groupId,
       `🎉 <b>DICK OF THE DAY</b> 🎉\n\n` +
-        `Congratulations to <b>${randomUser.firstName}</b>! 🍆\n\n` +
+        `Congratulations to <b>@${randomUser.username}</b>! 🍆\n\n` +
         `You've been selected as today's lucky winner and received a bonus growth of <b>+${growthAmount}cm</b>!\n\n` +
         `Size: ${oldSize.toFixed(1)}cm → ${randomUser.size.toFixed(
           1

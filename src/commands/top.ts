@@ -9,6 +9,7 @@ import { sendSafeHTML } from "../utils/formatting";
 import { ErrorType, handleError } from "../utils/error";
 import logger from "../utils/logger";
 import { PAGE_SIZE } from "../utils/config/manager";
+import { formatNumber } from "../utils/formatting-utils";
 
 /**
  * Handles the /top command
@@ -66,12 +67,21 @@ export async function handleTop(
       // Emojis for top 3
       let prefix = `${actualRank}.`;
 
-      // Format size without decimal if it's a whole number
-      const sizeDisplay = Number.isInteger(user.size)
-        ? user.size.toString()
-        : user.size.toFixed(1);
+      // Get actual size from database
+      const actualSize = user.size;
 
-      return `${prefix} <b>${user.firstName}</b>: ${sizeDisplay}cm`;
+      // Format size without decimal if it's a whole number (but keep it minimum 1cm for display)
+      const sizeDisplay = Number.isInteger(Math.max(1, actualSize))
+        ? Math.max(1, actualSize).toString()
+        : Math.max(1, actualSize).toFixed(1);
+
+      // For users with negative sizes, show the actual value in parentheses
+      const displayText =
+        actualSize < 1
+          ? `${sizeDisplay}cm (actual: ${formatNumber(actualSize)}cm)`
+          : `${sizeDisplay}cm`;
+
+      return `${prefix} <b>${user.firstName}</b>: ${displayText}`;
     });
 
     // Create header text

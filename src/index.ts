@@ -23,14 +23,6 @@ import {
   registerCallbackQueries,
   setAdminUserIds,
 } from "./utils/commands/handler";
-import { handleDuello } from "./commands/duello";
-import {
-  handleDuelloAcceptance,
-  handleDuelloAttack,
-  handleDuelloDefend,
-  handleDuelloDecline,
-  handleDuelloSpecial,
-} from "./utils/duello-callbacks";
 
 // Initialize the bot
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
@@ -68,7 +60,7 @@ const commands: Command[] = [
     handler: async (
       bot: TelegramBot,
       msg: TelegramBot.Message,
-      match: RegExpExecArray | null | undefined,
+      match: RegExpExecArray | null | undefined
     ) => {
       await handleTop(bot, msg, 1);
     },
@@ -88,7 +80,7 @@ const commands: Command[] = [
     handler: async (
       bot: TelegramBot,
       msg: TelegramBot.Message,
-      match: RegExpExecArray | null | undefined,
+      match: RegExpExecArray | null | undefined
     ) => {
       const wagerStr = match?.[3]?.trim();
       const wager = wagerStr ? parseFloat(wagerStr) : 1.0;
@@ -108,20 +100,6 @@ const commands: Command[] = [
     regex: /^\/reset_time(@\w+)?(\s+(.+))?$/,
     handler: handleResetTime,
     adminOnly: true,
-  },
-  {
-    name: "duello",
-    aliases: ["duel", "dl"],
-    description: "Challenge someone to a strategic dick duel",
-    regex: /^\/duello(@\w+)?(?:\s+(.*))?$/,
-    handler: async (
-      bot: TelegramBot,
-      msg: TelegramBot.Message,
-      match: RegExpExecArray | null | undefined,
-    ) => {
-      const args = match?.[2]?.trim();
-      await handleDuello(bot, msg, args);
-    },
   },
 ];
 
@@ -150,49 +128,6 @@ const callbackQueries: CallbackQuery[] = [
         query.data?.startsWith("top_noop:")
       ) {
         await handleTopPagination(bot, query);
-      }
-    },
-  },
-  {
-    name: "duello_acceptance",
-    prefix: "duello_accept:",
-    handler: async (bot: TelegramBot, query: TelegramBot.CallbackQuery) => {
-      if (!query.data) return;
-      const [_, duelloId, style] = query.data.split(":");
-      await handleDuelloAcceptance(bot, query, duelloId, style);
-    },
-  },
-  {
-    name: "duello_join",
-    prefix: "duello_join:",
-    handler: async (bot: TelegramBot, query: TelegramBot.CallbackQuery) => {
-      if (!query.data) return;
-      const [_, duelloId, style] = query.data.split(":");
-      await handleDuelloAcceptance(bot, query, duelloId, style);
-    },
-  },
-  {
-    name: "duello_decline",
-    prefix: "duello_decline:",
-    handler: async (bot: TelegramBot, query: TelegramBot.CallbackQuery) => {
-      if (!query.data) return;
-      const duelloId = query.data.split(":")[1];
-      await handleDuelloDecline(bot, query, duelloId);
-    },
-  },
-  {
-    name: "duello_turn",
-    prefix: "duello_",
-    handler: async (bot: TelegramBot, query: TelegramBot.CallbackQuery) => {
-      if (!query.data) return;
-      const [action, duelloId] = query.data.split(":");
-
-      if (action === "duello_attack") {
-        await handleDuelloAttack(bot, query, duelloId);
-      } else if (action === "duello_defend") {
-        await handleDuelloDefend(bot, query, duelloId);
-      } else if (action === "duello_special") {
-        await handleDuelloSpecial(bot, query, duelloId);
       }
     },
   },
