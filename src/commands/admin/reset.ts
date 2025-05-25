@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import { AppDataSource } from "../../utils/db";
-import { GroupUser, GroupGrowth } from "../../entity";
+import { GroupUser, GroupGrowth, GroupFight } from "../../entity";
 import { logSystemEvent } from "../../utils/logger";
 import { findGroupUserByIdentifier } from "../../utils/db/group-operations";
 
@@ -11,14 +11,13 @@ import { findGroupUserByIdentifier } from "../../utils/db/group-operations";
  * - /admin_reset user @username - Resets a specific user to default values in this group
  * - /admin_reset growth @username - Resets a specific user's growth history in this group
  * - /admin_reset all_growths - Resets growth history for all users in this group
+ * - /admin_reset wager <fight_id> - Delete a specific wager/fight
  */
 export async function resetCommand(
   bot: TelegramBot,
   msg: TelegramBot.Message,
   args?: string
 ): Promise<void> {
-  const groupId = msg.chat.id;
-
   if (!args) {
     await bot.sendMessage(
       msg.chat.id,
@@ -26,7 +25,8 @@ export async function resetCommand(
         "Available reset types:\n" +
         "- user @username - Reset a specific user to default values in this group\n" +
         "- growth @username - Reset a specific user's growth history in this group\n" +
-        "- all_growths - Reset growth history for all users in this group\n\n" +
+        "- all_growths - Reset growth history for all users in this group\n" +
+        "- wager <fight_id> - Delete a specific wager/fight\n\n" +
         "Examples:\n" +
         "/admin_reset user @username\n" +
         "/admin_reset growth 123456789",
@@ -46,6 +46,8 @@ export async function resetCommand(
     await resetGrowthHistory(bot, msg, argParts[1]);
   } else if (resetType === "all_growths") {
     await resetAllGrowthHistory(bot, msg);
+  } else if (resetType === "wager" && argParts.length >= 2) {
+    await resetWager(bot, msg, argParts[1]);
   } else {
     await bot.sendMessage(
       msg.chat.id,
@@ -205,6 +207,74 @@ async function resetAllGrowthHistory(
     chatId: msg.chat.id,
     groupId: groupId,
   };
+}
+
+/**
+ * Reset a specific wager/fight
+ */
+async function resetWager(
+  bot: TelegramBot,
+  msg: TelegramBot.Message,
+  fightId: string
+): Promise<void> {
+  const groupId = msg.chat.id;
+  const fightRepo = AppDataSource.getRepository(GroupFight);
+
+  // Parse fight ID
+  const fightIdNum = parseInt(fightId);
+  if (isNaN(fightIdNum)) {
+    await bot.sendMessage(msg.chat.id, "Invalid fight ID", {
+      reply_to_message_id: msg.message_id,
+    });
+    return;
+  }
+
+  // Find the fight
+  const fight = await fightRepo.findOne({
+    where: { id: fightIdNum, groupId },
+    relations: ["initiator", "target"],
+  });
+
+  if (!fight) {
+    await bot.sendMessage(
+      msg.chat.id,
+      "Fight not found or not from this group",
+      {
+        reply_to_message_id: msg.message_id,
+      }
+    );
+    return;
+  }
+
+  try {
+    await fightRepo.delete(fight.id);
+
+    // Log the action
+    logSystemEvent(
+      `Admin ${msg.from?.username || msg.from?.id} deleted fight ${
+        fight.id
+      } between ${fight.initiator.firstName} and ${
+        fight.target?.firstName || "open challenge"
+      } in group ${groupId}`
+    );
+
+    // Send confirmation
+    await bot.sendMessage(
+      msg.chat.id,
+      `Successfully deleted fight #${fight.id} between ${
+        fight.initiator.firstName
+      } and ${fight.target?.firstName || "open challenge"}.`,
+      { reply_to_message_id: msg.message_id }
+    );
+  } catch (error) {
+    await bot.sendMessage(
+      msg.chat.id,
+      `Error deleting fight: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      { reply_to_message_id: msg.message_id }
+    );
+  }
 }
 
 /**

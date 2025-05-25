@@ -4,6 +4,7 @@ import {
   createGroupFight,
   getOrCreateGroupUser,
   getActiveUserFights,
+  updateGroupFight,
 } from "../utils/db/group-operations";
 import { formatNumber } from "../utils/formatting-utils";
 
@@ -110,7 +111,7 @@ export async function handlePvp(
     ],
   };
 
-  await bot.sendMessage(
+  const sentMessage = await bot.sendMessage(
     msg.chat.id,
     `🥊 <b>DICK FIGHT CHALLENGE</b> 🥊\n\n` +
       `${initiator.firstName} has started a dick fight challenge!\n\n` +
@@ -120,5 +121,16 @@ export async function handlePvp(
       parse_mode: "HTML",
       reply_markup: keyboard,
     }
+  );
+
+  // Update fight with message ID
+  fight.messageId = sentMessage.message_id;
+  await updateGroupFight(fight);
+
+  // Notify initiator that the challenge has been sent
+  await bot.sendMessage(
+    msg.chat.id,
+    `✅ Challenge sent! Waiting for someone to accept...`,
+    { reply_to_message_id: msg.message_id }
   );
 }

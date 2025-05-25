@@ -37,7 +37,8 @@ export async function getCommand(
         "- user <user_id or @username> - Detailed info about a specific user in this group\n" +
         "- inactive [days=30] - List users who haven't grown in X days in this group\n" +
         "- top_growers [count=10] - Users with most growth attempts in this group\n" +
-        "- top_fighters [count=10] - Users with most fights in this group\n",
+        "- top_fighters [count=10] - Users with most fights in this group\n" +
+        "- wagers - List all active wagers in this group\n",
       { reply_to_message_id: msg.message_id }
     );
     return;
@@ -78,6 +79,10 @@ export async function getCommand(
       case "top_fighters":
         const fightCount = argParts.length > 1 ? parseInt(argParts[1]) : 10;
         await getTopFighters(bot, msg, fightCount);
+        break;
+
+      case "wagers":
+        await getActiveWagers(bot, msg);
         break;
 
       default:
@@ -501,4 +506,67 @@ async function getTopFighters(
   });
 
   await bot.sendMessage(msg.chat.id, message, { parse_mode: "HTML" });
+}
+
+/**
+ * Get list of active wagers in the current group
+ */
+async function getActiveWagers(
+  bot: TelegramBot,
+  msg: TelegramBot.Message
+): Promise<void> {
+  const groupId = msg.chat.id;
+  const groupFightRepo = AppDataSource.getRepository(GroupFight);
+
+  // Find all pending fights in this group
+  const activeWagers = await groupFightRepo.find({
+    where: { groupId, status: "pending" },
+    relations: ["initiator", "target"],
+    order: { timestamp: "DESC" },
+  });
+
+  if (activeWagers.length === 0) {
+    await bot.sendMessage(msg.chat.id, "No active wagers in this group.", {
+      reply_to_message_id: msg.message_id,
+    });
+    return;
+  }
+
+  // Build message
+  let message = `<b>ACTIVE WAGERS IN THIS GROUP</b>\n\n`;
+  message += `Found ${activeWagers.length} active wagers:\n\n`;
+
+  activeWagers.forEach((fight, index) => {
+    const timeAgo = Math.floor(
+      (Date.now() - fight.timestamp.getTime()) / (1000 * 60)
+    );
+    const initiatorName = fight.initiator.firstName.replace(/[<>]/g, "");
+    const targetName = fight.target
+      ? fight.target.firstName.replace(/[<>]/g, "")
+      : "Open challenge";
+
+    // Create a clickable message link using the stored messageId
+    const messageLink = fight.messageId
+      ? `https://t.me/c/${Math.abs(groupId).toString().slice(3)}/${
+          fight.messageId
+        }`
+      : null;
+
+    message +=
+      `${index + 1}. <code>Fight #${fight.id}</code>${
+        messageLink ? ` (<a href="${messageLink}">Go to fight</a>)` : ""
+      }\n` +
+      `   • Initiator: ${initiatorName}\n` +
+      `   • Target: ${targetName}\n` +
+      `   • Wager: ${formatNumber(fight.wager)}cm\n` +
+      `   • Started: ${timeAgo} minutes ago\n\n`;
+  });
+
+  message +=
+    "\nUse <code>/admin_reset wager &lt;fight_id&gt;</code> to delete a specific wager.";
+
+  await bot.sendMessage(msg.chat.id, message, {
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  });
 }

@@ -184,7 +184,8 @@ export async function createGroupFight(
   initiator: GroupUser,
   targetId: number | null,
   groupId: number,
-  wager: number = 1.0
+  wager: number = 1.0,
+  messageId?: number
 ): Promise<GroupFight> {
   return await getDatabase().transaction(async (manager) => {
     const fightRepo = manager.getRepository(GroupFight);
@@ -205,11 +206,21 @@ export async function createGroupFight(
       target,
       groupId,
       wager,
+      messageId,
       timestamp: new Date(),
     });
 
     return await fightRepo.save(fight);
   });
+}
+
+/**
+ * Updates a group fight's information
+ */
+export async function updateGroupFight(fight: GroupFight): Promise<GroupFight> {
+  const db = getDatabase();
+  const fightRepo = db.getRepository(GroupFight);
+  return await fightRepo.save(fight);
 }
 
 /**
@@ -335,22 +346,22 @@ export async function getActiveUserFights(
   groupId: number
 ): Promise<GroupFight[]> {
   const fightRepo = getDatabase().getRepository(GroupFight);
-  
+
   // Get all fights where user is initiator or target and fight is not completed
   return await fightRepo.find({
     where: [
       {
         initiator: { id: userId },
         groupId: groupId,
-        status: "pending"
+        status: "pending",
       },
       {
         target: { id: userId },
         groupId: groupId,
-        status: "pending"
-      }
+        status: "pending",
+      },
     ],
-    relations: ["initiator", "target"]
+    relations: ["initiator", "target"],
   });
 }
 
@@ -787,4 +798,13 @@ export async function canGroupReceiveDOTD(groupId: number): Promise<{
     canReceive: timeUntilNextEligible <= 0,
     timeUntilNextEligible,
   };
+}
+
+/**
+ * Deletes a specific fight by ID
+ */
+export async function deleteFightById(fightId: number): Promise<void> {
+  const db = getDatabase();
+  const fightRepo = db.getRepository(GroupFight);
+  await fightRepo.delete(fightId);
 }

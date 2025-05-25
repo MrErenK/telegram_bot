@@ -170,4 +170,8 @@ export class GroupFight {
   // The chat where the fight took place
   @Column("integer", { nullable: true })
   chatId!: number | null;
+
+  // Message ID of the fight challenge message
+  @Column("integer", { nullable: true })
+  messageId!: number | null;
 }
